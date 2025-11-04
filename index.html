@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iPhone Shop</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+    <h1>📱 iPhone Shop</h1>
+    <div id="welcome-banner" class="welcome-banner"></div>
+    <button id="logout-btn" class="logout-btn">Logout</button>
+</header>
+
+  <main id="iphone-gallery"></main>
+
+  <!-- Details Modal -->
+  <div id="details-modal" class="modal hidden">
+    <div class="modal-content">
+      <div id="modal-image" class="modal-left"></div>
+      <div id="modal-specs" class="modal-right"></div>
+    </div>
+    <button id="close-btn">Close</button>
+  </div>
+
+  <!-- Cart Sidebar -->
+  <button id="floating-cart" class="floating-cart">🛒</button>
+  <div id="cart-sidebar" class="cart hidden">
+    <button id="cart-close" class="cart-close">×</button>
+    <h2>Your Cart</h2>
+    <ul id="cart-items"></ul>
+    <div id="cart-total"></div>
+    <button id="checkout-btn">Checkout</button>
+  </div>
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="auth-overlay hidden">
+    <div class="auth-box">
+      <h2 class="auth-title">Welcome to the Shop</h2>
+      <h3 id="auth-mode-label">Log In</h3>
+      <form id="authForm">
+        <input name="username" placeholder="Username" required />
+        <input name="password" type="password" placeholder="Password" required />
+        <button type="submit" id="authSubmitBtn">Log In</button>
+      </form>
+      <button id="toggleModeBtn" class="auth-toggle">Register</button>
+      <button id="authClose" class="auth-close">×</button>
+    </div>
+  </div>
+
+  <script src="iphones.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
