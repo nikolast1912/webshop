@@ -8,35 +8,36 @@
 </head>
 <body>
 <header>
-    <h1>📱 iPhone Shop</h1>
-    <div id="welcome-banner" class="welcome-banner"></div>
-    <button id="logout-btn" class="logout-btn">Logout</button>
+    <h1>iPhone Shop</h1>
+    <div class="user-section">
+        <div id="welcome-banner" class="welcome-banner"></div>
+        <button id="logout-btn" class="logout-btn">Logout</button>
+    </div>
 </header>
 
   <main id="iphone-gallery"></main>
 
-  <!-- Details Modal -->
   <div id="details-modal" class="modal hidden">
     <div class="modal-content">
+      <button id="close-btn" class="modal-close" aria-label="Close details">×</button>
       <div id="modal-image" class="modal-left"></div>
       <div id="modal-specs" class="modal-right"></div>
     </div>
-    <button id="close-btn">Close</button>
   </div>
 
-  <!-- Cart Sidebar -->
+  <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">🌙</button>
   <button id="floating-cart" class="floating-cart">🛒</button>
   <div id="cart-sidebar" class="cart hidden">
-    <button id="cart-close" class="cart-close">×</button>
+    <button id="cart-close" class="cart-close">X</button>
     <h2>Your Cart</h2>
     <ul id="cart-items"></ul>
     <div id="cart-total"></div>
     <button id="checkout-btn">Checkout</button>
   </div>
 
-  <!-- Auth Modal -->
   <div id="auth-modal" class="auth-overlay hidden">
     <div class="auth-box">
+      <button id="authClose" class="modal-close auth-close" aria-label="Close auth">×</button>
       <h2 class="auth-title">Welcome to the Shop</h2>
       <h3 id="auth-mode-label">Log In</h3>
       <form id="authForm">
@@ -45,7 +46,6 @@
         <button type="submit" id="authSubmitBtn">Log In</button>
       </form>
       <button id="toggleModeBtn" class="auth-toggle">Register</button>
-      <button id="authClose" class="auth-close">×</button>
     </div>
   </div>
 
