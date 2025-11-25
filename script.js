@@ -35,35 +35,9 @@ const iphones = [
     { name: "iPhone 12", image: "12.png", specs: ["Dual camera", "5G", "MagSafe"] },
     { name: "iPhone 12 Mini", image: "12mini.png", specs: ["Compact size", "Dual camera", "5G"] }
   ];
+
+
 const gallery = document.getElementById("iphone-gallery");
-const modal = document.getElementById("details-modal");
-const modalImage = document.getElementById("modal-image");
-const modalSpecs = document.getElementById("modal-specs");
-const closeBtn = document.getElementById("close-btn");
-
-const cartSidebar = document.getElementById("cart-sidebar");
-const cartItems = document.getElementById("cart-items");
-const cartTotal = document.getElementById("cart-total");
-const checkoutBtn = document.getElementById("checkout-btn");
-const cartClose = document.getElementById("cart-close");
-const floatingCart = document.getElementById("floating-cart");
-
-const authModal = document.getElementById("auth-modal");
-const authForm = document.getElementById("authForm");
-const authModeLabel = document.getElementById("auth-mode-label");
-const authSubmitBtn = document.getElementById("authSubmitBtn");
-const toggleModeBtn = document.getElementById("toggleModeBtn");
-const authClose = document.getElementById("authClose");
-
-const welcomeBanner = document.getElementById("welcome-banner");
-
-let cart = {};
-let isLoginMode = true;
-let username = localStorage.getItem('username');
-
-if (username && welcomeBanner) {
-  welcomeBanner.textContent = `Welcome ${username}`;
-}
 
 const categories = {
   "iPhone 17 Series": iphones.slice(0, 4),
@@ -91,8 +65,8 @@ for (let category in categories) {
     card.innerHTML = `
       <img src="${phone.image}" alt="${phone.name}" />
       <h3>${phone.name}</h3>
-      <button onclick="showDetails(${iphones.indexOf(phone)})">Details</button>
-      <button onclick="addToCart('${phone.name}')">＋ Add to Cart</button>
+      <button class="details-btn" data-index="${iphones.indexOf(phone)}">Details</button>
+      <button class="add-cart-btn" data-name="${phone.name}">＋ Add to Cart</button>
     `;
     scrollContainer.appendChild(card);
   });
@@ -102,163 +76,6 @@ for (let category in categories) {
   gallery.appendChild(section);
 }
 
-function showDetails(index) {
-  const phone = iphones[index];
-  modalImage.style.backgroundImage = `url('${phone.image}')`;
-  modalSpecs.innerHTML = `<h2>${phone.name}</h2><ul>${phone.specs.map(spec => `<li>${spec}</li>`).join('')}</ul>`;
-  modal.classList.remove("hidden");
-}
-
-closeBtn.addEventListener("click", () => {
-  modal.classList.add("hidden");
-});
-
-floatingCart.addEventListener("click", () => {
-  if (!requireLogin()) return;
-  cartSidebar.classList.toggle("hidden");
-});
-
-cartClose.addEventListener("click", () => {
-  cartSidebar.classList.add("hidden");
-});
-
-checkoutBtn.addEventListener("click", () => {
-  showToast("Proceeding to checkout...");
-});
-
-function requireLogin() {
-  if (!username) {
-    authModal.classList.remove("hidden");
-    document.body.style.overflow = "hidden";
-    floatingCart.style.pointerEvents = "none";
-    return false;
-  }
-  return true;
-}
-
-function addToCart(name) {
-  if (!requireLogin()) return;
-  cart[name] = cart[name] ? cart[name] + 1 : 1;
-  updateCart();
-  showToast(`${name} added to cart!`);
-  saveCartToServer();
-}
-
-function changeQuantity(name, delta) {
-  cart[name] += delta;
-  if (cart[name] <= 0) {
-    delete cart[name];
-  }
-  updateCart();
-  saveCartToServer();
-}
-
-function updateCart() {
-  cartItems.innerHTML = '';
-  let total = 0;
-  for (let name in cart) {
-    const quantity = cart[name];
-    const price = 999;
-    total += price * quantity;
-    const li = document.createElement("li");
-    li.innerHTML = `
-      ${name} x${quantity}
-      <div>
-        <button onclick="changeQuantity('${name}', 1)">＋</button>
-        <button onclick="changeQuantity('${name}', -1)">−</button>
-      </div>
-    `;
-    cartItems.appendChild(li);
-  }
-  cartTotal.textContent = `Total: $${total}`;
-}
-
-function saveCartToServer() {
-  if (!username) return;
-  fetch('/api/cart/save', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      username,
-      items: Object.entries(cart).map(([name, quantity]) => ({ name, quantity }))
-    })
-  });
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  if (username) {
-    fetch(`/api/cart/${username}`)
-      .then(res => res.json())
-      .then(data => {
-        data.items.forEach(item => {
-          cart[item.name] = item.quantity;
-        });
-        updateCart();
-        showToast(`Welcome back, ${username}`);
-      });
-  }
-});
-
-authClose.addEventListener("click", () => {
-  authModal.classList.add("hidden");
-  document.body.style.overflow = "";
-  floatingCart.style.pointerEvents = "";
-});
-
-toggleModeBtn.addEventListener("click", () => {
-  isLoginMode = !isLoginMode;
-  authModeLabel.textContent = isLoginMode ? "Log In" : "Register";
-  authSubmitBtn.textContent = isLoginMode ? "Log In" : "Register";
-  toggleModeBtn.textContent = isLoginMode ? "Register" : "Back to Log In";
-});
-
-authSubmitBtn.addEventListener("click", async (e) => {
-  e.preventDefault();
-  const form = new FormData(authForm);
-  const endpoint = isLoginMode ? "/api/login" : "/api/register";
-
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      username: form.get("username"),
-      password: form.get("password")
-    })
-  });
-
-  if (res.ok) {
-    username = form.get("username");
-    localStorage.setItem("username", username);
-    authModal.classList.add("hidden");
-    document.body.style.overflow = "";
-    floatingCart.style.pointerEvents = "";
-    location.reload();
-  } else {
-    if (!isLoginMode) {
-      const fallback = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: form.get("username"),
-          password: form.get("password")
-        })
-      });
-
-      if (fallback.ok) {
-        username = form.get("username");
-        localStorage.setItem("username", username);
-        authModal.classList.add("hidden");
-        document.body.style.overflow = "";
-        floatingCart.style.pointerEvents = "";
-        location.reload();
-      } else {
-        showToast("Login failed");
-      }
-    } else {
-      showToast("Login failed");
-    }
-  }
-});
 
 function showToast(message) {
   const toast = document.createElement("div");
@@ -275,81 +92,270 @@ function showToast(message) {
   toast.style.zIndex = "1001";
   toast.style.opacity = "0";
   toast.style.transition = "opacity 0.3s ease";
-
   document.body.appendChild(toast);
-  requestAnimationFrame(() => {
-    toast.style.opacity = "1";
-  });
-
+  requestAnimationFrame(() => { toast.style.opacity = "1"; });
   setTimeout(() => {
     toast.style.opacity = "0";
-    setTimeout(() => {
-      toast.remove();
-    }, 300);
+    setTimeout(() => toast.remove(), 300);
   }, 2000);
 }
 
 function isLoggedIn() {
-    return localStorage.getItem('username') !== null;
+  return localStorage.getItem('username') !== null;
 }
 
-function handleCartClick(product) {
-    if (!isLoggedIn()) {
-        // Show auth modal only when user is not logged in
-        document.getElementById('auth-modal').classList.remove('hidden');
-    } else {
-        // Add to cart logic here
-        // Your existing cart handling code
-    }
+function requireLogin() {
+  if (!isLoggedIn()) {
+    const authModal = document.getElementById("auth-modal");
+    authModal.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+    const floatingCart = document.getElementById("floating-cart");
+    if (floatingCart) floatingCart.style.pointerEvents = "none";
+    return false;
+  }
+  return true;
 }
 
-function createIphoneCard(iphone) {
-    // ...existing code...
-    const buyButton = document.createElement('button');
-    buyButton.textContent = 'Add to Cart';
-    buyButton.onclick = () => handleCartClick(iphone);
-    // ...existing code...
+let cart = {};
+let username = localStorage.getItem('username') || null;
+
+
+function updateCart() {
+  const cartItems = document.getElementById("cart-items");
+  const cartTotal = document.getElementById("cart-total");
+  cartItems.innerHTML = '';
+  let total = 0;
+  for (let name in cart) {
+    const quantity = cart[name];
+    const price = 999; 
+    total += price * quantity;
+    const li = document.createElement("li");
+    li.innerHTML = `
+      ${name} x${quantity}
+      <div>
+        <button class="inc-btn" data-name="${name}">＋</button>
+        <button class="dec-btn" data-name="${name}">−</button>
+      </div>
+    `;
+    cartItems.appendChild(li);
+  }
+  cartTotal.textContent = `Total: $${total}`;
+
+  cartItems.querySelectorAll('.inc-btn').forEach(btn =>
+    btn.addEventListener('click', () => changeQuantity(btn.dataset.name, 1))
+  );
+  cartItems.querySelectorAll('.dec-btn').forEach(btn =>
+    btn.addEventListener('click', () => changeQuantity(btn.dataset.name, -1))
+  );
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('auth-modal').classList.add('hidden');
-    
-    const logoutBtn = document.getElementById('logout-btn');
-    const welcomeBanner = document.getElementById('welcome-banner');
-    
-    // Show/hide logout button based on login status
-    function updateLogoutButton() {
-        if (isLoggedIn()) {
-            logoutBtn.classList.remove('hidden');
-        } else {
-            logoutBtn.classList.add('hidden');
-        }
-    }
-    
-    // Handle logout
-    logoutBtn.addEventListener('click', () => {
-        localStorage.removeItem('username');
-        welcomeBanner.textContent = '';
-        updateLogoutButton();
-        // Clear cart if needed
-        document.getElementById('cart-items').innerHTML = '';
-        // Optionally redirect to home page
-        window.location.reload();
+function saveCartToServer() {
+  if (!username) return;
+  fetch('/api/cart/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      username,
+      items: Object.entries(cart).map(([name, quantity]) => ({ name, quantity }))
+    })
+  }).catch(() => {});
+}
+
+function addToCart(name) {
+  if (!requireLogin()) return;
+  cart[name] = cart[name] ? cart[name] + 1 : 1;
+  updateCart();
+  showToast(`${name} added to cart!`);
+  saveCartToServer();
+}
+
+function changeQuantity(name, delta) {
+  if (!cart[name]) return;
+  cart[name] += delta;
+  if (cart[name] <= 0) delete cart[name];
+  updateCart();
+  saveCartToServer();
+}
+
+function showDetails(index) {
+  const phone = iphones[index];
+  const modal = document.getElementById("details-modal");
+  const modalImage = document.getElementById("modal-image");
+  const modalSpecs = document.getElementById("modal-specs");
+  modalImage.style.backgroundImage = `url('${phone.image}')`;
+  modalSpecs.innerHTML = `
+    <h2>${phone.name}</h2>
+    <ul>${phone.specs.map(spec => `<li>${spec}</li>`).join('')}</ul>
+  `;
+  modal.classList.remove("hidden");
+}
+
+
+window.addEventListener('DOMContentLoaded', () => {
+  const detailsModal = document.getElementById("details-modal");
+  const closeBtn = document.getElementById("close-btn");
+  const floatingCart = document.getElementById("floating-cart");
+  const cartClose = document.getElementById("cart-close");
+  const checkoutBtn = document.getElementById("checkout-btn");
+  const themeToggle = document.getElementById('theme-toggle');
+  const logoutBtn = document.getElementById('logout-btn');
+  const welcomeBanner = document.getElementById('welcome-banner');
+  const authModal = document.getElementById("auth-modal");
+  const authClose = document.getElementById("authClose");
+  const authForm = document.getElementById("authForm");
+  const authModeLabel = document.getElementById("auth-mode-label");
+  const authSubmitBtn = document.getElementById("authSubmitBtn");
+  const toggleModeBtn = document.getElementById("toggleModeBtn");
+
+  if (username && welcomeBanner) welcomeBanner.textContent = `Welcome ${username}`;
+
+
+  document.querySelectorAll('.details-btn').forEach(btn => {
+    btn.addEventListener('click', () => showDetails(Number(btn.dataset.index)));
+  });
+  document.querySelectorAll('.add-cart-btn').forEach(btn => {
+    btn.addEventListener('click', () => addToCart(btn.dataset.name));
+  });
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      detailsModal.classList.add('hidden');
     });
-    
-    // Initial check for login status
+  }
+
+
+  if (floatingCart) {
+    floatingCart.addEventListener('click', () => {
+      if (!requireLogin()) return;
+      document.getElementById('cart-sidebar').classList.toggle('hidden');
+    });
+  }
+
+  if (cartClose) {
+    cartClose.addEventListener('click', () => {
+      document.getElementById('cart-sidebar').classList.add('hidden');
+    });
+  }
+
+  if (checkoutBtn) {
+    checkoutBtn.addEventListener('click', () => {
+      showToast("Proceeding to checkout...");
+    });
+  }
+
+  if (themeToggle) {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') {
+      document.body.classList.add('dark-mode');
+      themeToggle.textContent = '⛅';
+    } else {
+      document.body.classList.remove('dark-mode');
+      themeToggle.textContent = '🌙';
+    }
+    themeToggle.addEventListener('click', () => {
+      const isDark = document.body.classList.toggle('dark-mode');
+      if (isDark) {
+        themeToggle.textContent = '⛅';
+        localStorage.setItem('theme', 'dark');
+      } else {
+        themeToggle.textContent = '🌙';
+        localStorage.setItem('theme', 'light');
+      }
+    });
+  }
+
+ 
+  if (logoutBtn) {
+  
+    function updateLogoutButton() {
+      if (isLoggedIn()) logoutBtn.classList.remove('hidden');
+      else logoutBtn.classList.add('hidden');
+    }
     updateLogoutButton();
+
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('username');
+      username = null;
+      if (welcomeBanner) welcomeBanner.textContent = '';
+      updateLogoutButton();
+      document.getElementById('cart-items').innerHTML = '';
+      window.location.reload();
+    });
+  }
+
+
+  if (authClose) {
+    authClose.addEventListener('click', () => {
+      if (authModal) authModal.classList.add('hidden');
+      document.body.style.overflow = "";
+      if (floatingCart) floatingCart.style.pointerEvents = "";
+    });
+  }
+
+
+  if (toggleModeBtn && authModeLabel && authSubmitBtn) {
+    let isLoginMode = true;
+    toggleModeBtn.addEventListener('click', () => {
+      isLoginMode = !isLoginMode;
+      authModeLabel.textContent = isLoginMode ? "Log In" : "Register";
+      authSubmitBtn.textContent = isLoginMode ? "Log In" : "Register";
+      toggleModeBtn.textContent = isLoginMode ? "Register" : "Back to Log In";
+    });
+
+
+    if (authSubmitBtn && authForm) {
+      authSubmitBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const form = new FormData(authForm);
+        const endpoint = isLoginMode ? "/api/login" : "/api/register";
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: form.get("username"),
+            password: form.get("password")
+          })
+        });
+
+        if (res.ok) {
+          username = form.get("username");
+          localStorage.setItem("username", username);
+          if (authModal) authModal.classList.add("hidden");
+          document.body.style.overflow = "";
+          if (floatingCart) floatingCart.style.pointerEvents = "";
+          window.location.reload();
+        } else {
+          showToast("Login failed");
+        }
+      });
+    }
+  }
+
+
+  if (username) {
+    fetch(`/api/cart/${username}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.items) {
+          data.items.forEach(item => { cart[item.name] = item.quantity; });
+          updateCart();
+          showToast(`Welcome back, ${username}`);
+        }
+      }).catch(() => {});
+  }
+
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const details = document.getElementById('details-modal');
+      if (details && !details.classList.contains('hidden')) details.classList.add('hidden');
+      if (authModal && !authModal.classList.contains('hidden')) {
+        authModal.classList.add('hidden');
+        document.body.style.overflow = "";
+        if (floatingCart) floatingCart.style.pointerEvents = "";
+      }
+    }
+  });
 });
 
-function showError(message) {
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-message';
-    errorDiv.textContent = message;
-    document.body.appendChild(errorDiv);
-    
-    setTimeout(() => {
-        errorDiv.remove();
-    }, 3000);
-}
 
-// Add this CSS for the error message
